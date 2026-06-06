@@ -22,22 +22,47 @@ Para la entrega del lexer alcanza con reconocer los tokens y los dos modos de ej
 Desde la raíz del proyecto (los fuentes están en `src/`):
 
 ```powershell
-python src\main.py archivo.smart   # analiza un archivo (extensión .smart obligatoria)
-python src\main.py                 # modo interactivo (línea vacía = analizar; 'salir' = terminar)
+python -m src.main archivo.smart   # analiza un archivo (extensión .smart obligatoria)
+python -m src.main carpeta\        # analiza todos los .smart de una carpeta
+python -m src.main                 # modo interactivo
+python src\main.py archivo.smart   # también funciona (fallback de import)
 ```
 
-- Dependencia: **PLY** (`pip install ply`). Entorno verificado: Python 3.14.5, ply 3.11.
+- `main.py` importa el lexer con `from src.lexer import ...` y, si falla (al correr
+  `python src\main.py`, donde `src/` queda en el path), cae a `from lexer import ...`.
+  Por eso **andan las dos formas**; la forma `-m` es la canónica (y la que usa PyInstaller).
+- **Modo interactivo:** se escribe una sentencia, **línea vacía = analizar**; el comando
+  `/cargar` abre un **selector gráfico de archivos** (tkinter) para elegir un `.smart`;
+  se sale con **Ctrl+C** (ya no con `salir`).
+- Dependencias: **PLY** (`pip install ply`) y **tkinter** (viene con CPython estándar).
+  Entorno verificado: Python 3.14.5, ply 3.11.
 - `src/main.py` es el único punto de entrada; `src/lexer.py` solo define el lexer (sin `__main__`).
+
+### Ejecutable (PyInstaller)
+
+```powershell
+build.bat                          # compila con PyInstaller → bin\main.exe
+bin\main.exe archivo.smart         # corre sin Python instalado
+```
+
+`build.bat` invoca `python -m PyInstaller --onefile --paths=. --distpath bin --workpath build src/main.py`.
+El `.exe` (`bin/main.exe`) **se versiona en git** (se entrega junto al código). En cambio
+`build.bat`, `main.spec` y `build/` son **helpers locales no versionados** (están en
+`.gitignore`): solo existen en la máquina donde se compila, no en el repo. Si modificás
+`main.py`/`lexer.py`, **recompilá** para que el `.exe` quede al día.
 
 ## Estructura
 
 | Ruta             | Rol |
 |------------------|-----|
 | `src/lexer.py`   | Definición completa del lexer PLY (tokens, reglas, errores). Sin `__main__`. |
-| `src/main.py`    | Punto de entrada único: modo archivo `.smart` o modo interactivo. |
+| `src/main.py`    | Punto de entrada único: archivo/carpeta `.smart`, modo interactivo y selector gráfico. |
 | `doc/gramatica.md` | Gramática vigente (fuente de verdad) + apéndice con prompt para maquetar. |
 | `doc/` (PDFs)    | `consigna.pdf` y `gramatica.pdf` (enunciado original). |
 | `prueba/`        | Ejemplos `.smart` (5: 4 válidos + 1 con errores léxicos). |
+| `bin/main.exe`   | Ejecutable empaquetado (versionado en git). |
+| `build.bat`      | Helper local (no versionado): compila el `.exe` con PyInstaller. |
+| `main.spec`      | Helper local (no versionado): spec de PyInstaller generado. |
 
 ## El lenguaje SMART HOME (categorías de tokens)
 
@@ -120,8 +145,6 @@ conviene corregir los ejemplos propios o, si se quiere, ampliar el lenguaje.
 - `prueba/` ya tiene 5 ejemplos `.smart` (4 válidos + 1 con errores léxicos). La consigna
   menciona `.json` para los ejemplos pero el resto usa `.smart` — aclarar con la cátedra
   cuál extensión esperan.
-- No es repo git todavía; conviene `git init` para versionar (ya no hay copias manuales
-  tipo `resguardo`).
 
 Ya resuelto: token único `ID_DISPOSITIVO` (lexer+gramática), atributos de solo lectura en
 condiciones (gramática), regex redundante `_?` de `t_TOKEN_ID_ESP`, ejemplos en `prueba/`,

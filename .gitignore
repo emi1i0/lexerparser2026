@@ -17,3 +17,8 @@ lextab.py
 *.swp
 .DS_Store
 Thumbs.db
+
+
+build/
+build.bat
+main.spec
