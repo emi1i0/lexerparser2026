@@ -1,0 +1,9 @@
+// Ejemplo con errores lexicos a proposito, para probar el control de errores.
+// El analizador NO se detiene: reporta cada caracter ilegal con linea y posicion
+// y sigue tokenizando el resto.
+WHEN sensor_temp > 25°C DO
+  foco_entrada.estado = ON
+  foco_entrada.brillo = 80$        // '$' es un caracter ilegal
+  altavoz_sala.mensaje = "ok" #     // '#' es un caracter ilegal
+  persiana_sala.posicion = 50%
+END

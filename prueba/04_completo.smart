@@ -1,0 +1,26 @@
+// Ejemplo completo: todos los tipos de dispositivo, sensores,
+// literales con unidad, operadores relacionales y conectores logicos.
+
+// Seguridad: humo detectado o (movimiento y puerta abierta)
+WHEN sensor_humo == true OR ( sensor_movimiento == true AND cerradura_principal.estado == OFF ) DO
+  alarma_casa.estado = ON
+  alarma_casa.activada = ON
+  aire_living.estado = OFF
+  persiana_comedor.posicion = 100%
+  altavoz_comedor.mensaje = "PELIGRO. HUMO DETECTADO"
+  altavoz_comedor.email_notif = bomberos@yahoo.com
+END
+
+// Confort: humedad y luz dentro de rango, negacion logica
+WHEN sensor_humedad >= 40% AND NOT sensor_luz <= 100lux DO
+  foco_patio.estado = ON
+  foco_patio.color = azul
+  foco_patio.brillo = 60%
+END
+
+// Tarea programada con fecha de solo lectura
+EVERY 1h DO
+  IF reloj_sala.fecha != 01/01/2026 THEN
+    aire_living.modo = vent
+  END
+END

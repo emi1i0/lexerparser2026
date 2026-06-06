@@ -1,0 +1,10 @@
+// Gestion del aire acondicionado con condicional anidado
+WHEN sensor_movimiento == true DO
+  IF sensor_temp > 26°C THEN
+    aire_living.estado = ON
+    aire_living.modo = frio
+    aire_living.temp_obj = 22°C
+  ELSE
+    aire_living.estado = OFF
+  END
+END

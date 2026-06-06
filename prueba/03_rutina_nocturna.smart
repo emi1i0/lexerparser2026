@@ -1,0 +1,12 @@
+// Rutina nocturna: cada 30 minutos revisa la hora y prepara la casa
+// Lee atributos de solo lectura (hora) en la condicion
+EVERY 30m DO
+  IF reloj_sala.hora > 22:00 AND alarma_casa.estado == OFF THEN
+    persiana_sala.posicion = 0%
+    cerradura_principal.estado = ON
+    altavoz_comedor.volumen = 20%
+    altavoz_comedor.mute = OFF
+    altavoz_comedor.mensaje = "Son las 22hs, a mimir"
+    altavoz_comedor.email_notif = apruebenosprofeporfavor@gmail.com
+  END
+END

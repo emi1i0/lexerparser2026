@@ -1,0 +1,6 @@
+// Ejemplo basico: un sensor de luz enciende y regula el foco de entrada
+WHEN sensor_luz < 250lux DO
+  foco_entrada.estado = ON
+  foco_entrada.brillo = 80%
+  foco_entrada.color = blanco
+END

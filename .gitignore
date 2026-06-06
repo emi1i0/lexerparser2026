@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# PLY (ply.lex / ply.yacc generan estos archivos)
+parser.out
+parsetab.py
+lextab.py
+
+# Editores / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
