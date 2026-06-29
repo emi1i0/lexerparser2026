@@ -64,6 +64,7 @@ SENSORES = {
     'sensor_movimiento': 'SENSOR_MOVIMIENTO',
     'sensor_humedad':    'SENSOR_HUMEDAD',
     'sensor_temp':       'SENSOR_TEMP',
+    'sensor_temp_int':   'SENSOR_TEMP',   # temperatura interior (usado en los ejemplos de la catedra)
     'sensor_luz':        'SENSOR_LUZ',
     'sensor_humo':       'SENSOR_HUMO',
 }

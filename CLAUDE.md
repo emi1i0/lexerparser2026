@@ -80,8 +80,10 @@ el `.exe` quede al día.
 
 - **Palabras reservadas / estructura:** `WHEN`, `EVERY`, `IF`, `THEN`, `ELSE`, `DO`,
   `END`, `AND`, `OR`, `NOT`.
-- **Sensores:** `sensor_temp`, `sensor_humedad`, `sensor_luz`, `sensor_movimiento`,
-  `sensor_humo`.
+- **Sensores:** `sensor_temp`, `sensor_temp_int`, `sensor_humedad`, `sensor_luz`,
+  `sensor_movimiento`, `sensor_humo`. (`sensor_temp_int` = temperatura interior; no
+  está en la tabla de la consigna pero la cátedra lo usa como válido — comparte el
+  token `SENSOR_TEMP`.)
 - **Dispositivos (actuadores):** un identificador que empieza con un prefijo de actuador
   (`foco_`, `aire_`, `persiana_`, `cerradura_`, `reloj_`, `altavoz_`, `alarma_`) se reconoce
   como **un único token `ID_DISPOSITIVO`** (la especificación va incluida, p. ej.
@@ -209,9 +211,14 @@ Se re-corrigió el 10/06/2026 al empezar el parser (ver `doc/cambios_parser_gui.
 
 Los ejemplos de `doc/consigna.pdf` usan formas que el lenguaje **no** acepta:
 `reloj.hora`/`alarma.estado` (sin prefijo de dispositivo), `color = blue` (válidos:
-`blanco/rojo/azul`), `temp_objetivo` (es `temp_obj`), `sensor_temp_int` (inexistente),
-`.email` (es `email_notif`). Caen a `TOKEN_ID_ESP` y ahora el **parser los reporta
-como errores sintácticos** con línea y lexema (ver `prueba/00_ej_consigna.smart`).
+`blanco/rojo/azul`), `temp_objetivo` (es `temp_obj`), `.email` (es `email_notif`).
+Caen a `TOKEN_ID_ESP` y ahora el **parser los reporta como errores sintácticos** con
+línea y lexema (ver `prueba/00_ej_consigna.smart`).
+
+`sensor_temp_int` (temperatura interior) **sí se acepta**: la tabla oficial de la
+consigna (pág. 5) no lo lista, pero los ejemplos de la consigna y los archivos de
+prueba de la cátedra ("Ejemplo válido.smart") lo usan como sensor válido. Por eso se
+agregó a la tabla `SENSORES` del lexer mapeado al token `SENSOR_TEMP` (28/06/2026).
 
 ## Pendientes
 
