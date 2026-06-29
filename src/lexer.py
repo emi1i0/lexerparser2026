@@ -14,9 +14,8 @@ tokens = (
     'SENSOR_TEMP', 'SENSOR_HUMEDAD', 'SENSOR_LUZ',
     'SENSOR_MOVIMIENTO', 'SENSOR_HUMO',
 
-    # actuadores
-    'PREF_FOCO', 'PREF_AIRE', 'PREF_PERSIANA',
-    'PREF_CERRADURA', 'PREF_RELOJ', 'PREF_ALTAVOZ', 'PREF_ALARMA',
+    # actuadores: identificador completo con prefijo (foco_entrada, aire_living, ...)
+    'ID_DISPOSITIVO',
 
     # atributos
     'ATTR_ESTADO', 'ATTR_BRILLO', 'ATTR_COLOR', 'ATTR_MODO',
@@ -69,15 +68,17 @@ SENSORES = {
     'sensor_humo':       'SENSOR_HUMO',
 }
 
-PREFIJOS = {
-    'cerradura_': 'PREF_CERRADURA',
-    'persiana_':  'PREF_PERSIANA',
-    'altavoz_':   'PREF_ALTAVOZ',
-    'alarma_':    'PREF_ALARMA',
-    'reloj_':     'PREF_RELOJ',
-    'foco_':      'PREF_FOCO',
-    'aire_':      'PREF_AIRE',
-}
+# prefijos de actuador: si un identificador EMPIEZA con uno de estos,
+# se emite como un unico token ID_DISPOSITIVO (ver doc/gramatica.md §0)
+PREFIJOS_DISP = (
+    'cerradura_',
+    'persiana_',
+    'altavoz_',
+    'alarma_',
+    'reloj_',
+    'foco_',
+    'aire_',
+)
 
 ATRIBUTOS = {
     'temp_obj':    'ATTR_TEMP_OBJ',
@@ -146,7 +147,7 @@ def t_TOKEN_NUMERO(t):
 # id generico
 
 def t_TOKEN_ID_ESP(t):
-    r'[a-zA-Z][a-zA-Z0-9_]*_?'
+    r'[a-zA-Z][a-zA-Z0-9_]*'
     lower = t.value.lower()
 
     if lower in KEYWORDS:
@@ -154,9 +155,6 @@ def t_TOKEN_ID_ESP(t):
         t.value = lower.upper()
     elif lower in SENSORES:
         t.type  = SENSORES[lower]
-        t.value = lower
-    elif lower in PREFIJOS:
-        t.type  = PREFIJOS[lower]
         t.value = lower
     elif lower in ATRIBUTOS:
         t.type  = ATRIBUTOS[lower]
@@ -173,6 +171,9 @@ def t_TOKEN_ID_ESP(t):
     elif lower in LIT_MODOS:
         t.type  = 'LIT_MODO'
         t.value = lower.upper()
+    elif lower.startswith(PREFIJOS_DISP):
+        t.type  = 'ID_DISPOSITIVO'
+        t.value = lower
     else:
         t.type  = 'TOKEN_ID_ESP'
         t.value = lower

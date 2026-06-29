@@ -1,0 +1,23 @@
+// Ejemplo con errores SINTACTICOS (el lexer no encuentra nada ilegal,
+// pero el parser debe rechazarlo y reportar cada error con su linea).
+
+// 1) asignacion a un atributo de SOLO LECTURA (hora no es asignable)
+WHEN sensor_movimiento == true DO
+  reloj_sala.hora = 22:00
+END
+
+// 2) bloque WHEN sin condicion
+WHEN DO
+  foco_entrada.estado = ON
+END
+
+// 3) asignacion al reves (valor a la izquierda)
+EVERY 10m DO
+  50% = foco_patio.brillo
+END
+
+// 4) instruccion valida al final: debe parsearse bien
+// (prueba que la recuperacion de errores no corta el analisis)
+IF sensor_humo == true THEN
+  alarma_casa.estado = ON
+END

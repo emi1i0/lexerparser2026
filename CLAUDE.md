@@ -1,66 +1,78 @@
-# CLAUDE.md — Proyecto SMART HOME (analizador léxico)
+# CLAUDE.md — Proyecto SMART HOME (lexer + parser + traductor HTML)
 
 > Contexto del proyecto para asistencia con Claude Code. En español.
 
 ## Qué es
 
-Analizador léxico (lexer) en **PLY** para un lenguaje de dominio específico (DSL)
+Intérprete en **PLY** (lex + yacc) para un lenguaje de dominio específico (DSL)
 de domótica llamado **SMART HOME**. Es el TPI de *Sintaxis y Semántica de Lenguajes*
-(UTN-FRRe, 2026). El nombre del proyecto es `lexerparser2026`, pero **por ahora solo
-existe el lexer; el parser todavía no está implementado** (siguiente etapa).
+(UTN-FRRe, 2026). Están implementados el **lexer**, el **parser LALR**, la
+**validación semántica** (atributo↔dispositivo, valor↔atributo, rangos) y el
+**traductor a HTML** (todo en la misma pasada del parseo), más una
+**interfaz gráfica tkinter** con editor de código.
+
+El proyecto está en **tres archivos fuente**: `src/lexer.py`, `src/parser.py`
+(parser + validación semántica + traductor HTML) y `src/main.py` (CLI + consola +
+GUI). No se usa la librería estándar `html` (decisión de la cátedra): el escape
+no se aplica, el texto va crudo en el HTML.
 
 Documentos de referencia en `doc/`:
 - `doc/consigna.pdf` — enunciado del TPI (lenguaje, tokens, traducción a HTML, control de errores).
-- `doc/gramatica.md` — **gramática vigente** (fuente de verdad, consistente con el lexer). Usar esta.
+- `doc/gramatica.md` — **gramática vigente** (fuente de verdad, implementada 1:1 en `src/parser.py`). Usar esta.
 - `doc/gramatica.pdf` — versión original del enunciado; quedó desactualizada (ver `doc/gramatica.md` §0).
+- `doc/cambios_parser_gui.md` — registro detallado de los cambios de la etapa parser+GUI (insumo del informe técnico).
 
-Entregas: **lexer = 07/06/2026**, trabajo completo (lexer+parser+traductor HTML) = 05/07/2026.
-Para la entrega del lexer alcanza con reconocer los tokens y los dos modos de ejecución.
+Entregas: **lexer = 07/06/2026 (entregado)**, trabajo completo (lexer+parser+traductor HTML) = **05/07/2026**.
 
 ## Cómo ejecutar
 
 Desde la raíz del proyecto (los fuentes están en `src/`):
 
 ```powershell
-python -m src.main archivo.smart   # analiza un archivo (extensión .smart obligatoria)
+python -m src.main archivo.smart   # analiza un archivo y genera archivo.html si es válido
 python -m src.main carpeta\        # analiza todos los .smart de una carpeta
-python -m src.main                 # modo interactivo
+python -m src.main                 # interfaz gráfica (editor + análisis + HTML)
+python -m src.main --consola       # REPL de terminal (el modo de la entrega del lexer)
 python src\main.py archivo.smart   # también funciona (fallback de import)
 ```
 
-- `main.py` importa el lexer con `from src.lexer import ...` y, si falla (al correr
-  `python src\main.py`, donde `src/` queda en el path), cae a `from lexer import ...`.
+- `main.py` importa con `from src.X import ...` y, si falla (al correr
+  `python src\main.py`, donde `src/` queda en el path), cae a `from X import ...`.
   Por eso **andan las dos formas**; la forma `-m` es la canónica (y la que usa PyInstaller).
-- **Modo interactivo:** se escribe una sentencia, **línea vacía = analizar**; el comando
-  `/cargar` abre un **selector gráfico de archivos** (tkinter) para elegir un `.smart`;
-  se sale con **Ctrl+C** (ya no con `salir`).
+- **GUI (default sin argumentos):** editor con números de línea, F5 analiza, pestañas
+  Tokens/Errores/HTML, doble click en un error salta a la línea, botones para guardar
+  el HTML o abrirlo en el navegador.
+- **Modo consola (`--consola`):** se escribe una sentencia, **línea vacía = analizar**;
+  `/cargar` abre un selector gráfico de archivos; se sale con **Ctrl+C**.
 - Dependencias: **PLY** (`pip install ply`) y **tkinter** (viene con CPython estándar).
   Entorno verificado: Python 3.14.5, ply 3.11.
-- `src/main.py` es el único punto de entrada; `src/lexer.py` solo define el lexer (sin `__main__`).
+- `src/main.py` es el único punto de entrada; `lexer.py` y `parser.py` no tienen `__main__` operativo propio.
 
 ### Ejecutable (PyInstaller)
 
 ```powershell
-build.bat                          # compila con PyInstaller → bin\main.exe
-bin\main.exe archivo.smart         # corre sin Python instalado
+build.bat                          # compila con PyInstaller → bin\win\main.exe
+bin\win\main.exe archivo.smart     # corre sin Python instalado
 ```
 
-`build.bat` invoca `python -m PyInstaller --onefile --paths=. --distpath bin --workpath build src/main.py`.
-El `.exe` (`bin/main.exe`) **se versiona en git** (se entrega junto al código). En cambio
-`build.bat`, `main.spec` y `build/` son **helpers locales no versionados** (están en
-`.gitignore`): solo existen en la máquina donde se compila, no en el repo. Si modificás
-`main.py`/`lexer.py`, **recompilá** para que el `.exe` quede al día.
+`build.bat` invoca `python -m PyInstaller --onefile --noconfirm --paths=. --distpath bin\win --workpath build src/main.py`.
+Los binarios (`bin/win/main.exe` y `bin/linux/main`) **se versionan en git** (se entregan
+junto al código). En cambio `build.bat`, `main.spec` y `build/` son **helpers locales no
+versionados** (están en `.gitignore`). Si modificás algo de `src/`, **recompilá** para que
+el `.exe` quede al día.
 
 ## Estructura
 
 | Ruta             | Rol |
 |------------------|-----|
-| `src/lexer.py`   | Definición completa del lexer PLY (tokens, reglas, errores). Sin `__main__`. |
-| `src/main.py`    | Punto de entrada único: archivo/carpeta `.smart`, modo interactivo y selector gráfico. |
+| `src/lexer.py`   | Lexer PLY completo (tokens, reglas, errores léxicos). Sin `__main__`. |
+| `src/parser.py`  | Parser LALR (`ply.yacc`): gramática 1:1 con `doc/gramatica.md` + **validación semántica** (tabla `ESPEC_ACTUADORES`) + **traducción a HTML** (función `renderizar`) en las acciones semánticas + errores sintácticos/semánticos. |
+| `src/main.py`    | Punto de entrada: despacho CLI / `--consola` / GUI (toda la GUI tkinter vive dentro de `ejecutar_gui()`), impresión de resultados, escritura del `.html`. |
 | `doc/gramatica.md` | Gramática vigente (fuente de verdad) + apéndice con prompt para maquetar. |
+| `doc/cambios_parser_gui.md` | Registro de los cambios de la etapa parser+GUI (histórico; anterior a la fusión de archivos y a la validación semántica). |
 | `doc/` (PDFs)    | `consigna.pdf` y `gramatica.pdf` (enunciado original). |
-| `prueba/`        | Ejemplos `.smart` (5: 4 válidos + 1 con errores léxicos). |
-| `bin/main.exe`   | Ejecutable empaquetado (versionado en git). |
+| `prueba/`        | Ejemplos `.smart` (8: el de la consigna + 4 válidos + 1 c/errores léxicos + 1 c/errores sintácticos + 1 c/errores semánticos) y los `.html` generados. |
+| `bin/win/`, `bin/linux/` | Ejecutables empaquetados (versionados en git). |
 | `build.bat`      | Helper local (no versionado): compila el `.exe` con PyInstaller. |
 | `main.spec`      | Helper local (no versionado): spec de PyInstaller generado. |
 
@@ -85,9 +97,12 @@ El `.exe` (`bin/main.exe`) **se versiona en git** (se entrega junto al código).
   `TOKEN_ID_ESP` (identificador genérico). `TOKEN_PORC` solo acepta 0–100 (`101%` → número + error).
 - **Operadores relacionales:** `==`, `!=`, `>=`, `<=`, `>`, `<`.
 - **Asignación / puntuación:** `=` (ASIG), `.` (PUNTO), `_` (GUION), `(` (L_PAR), `)` (R_PAR).
+- `GUION` y `TOKEN_ID_ESP` existen en el lexer pero **no aparecen en la gramática**:
+  el parser los rechaza como error sintáctico (sirven para mensajes de error claros).
 
-## Mecanismo clave (importante al editar)
+## Mecanismos clave (importante al editar)
 
+### Lexer
 - **Reclasificación case-insensitive:** un identificador genérico se captura con la
   regla `t_TOKEN_ID_ESP` y luego se reclasifica buscando su forma en minúsculas en las
   tablas `KEYWORDS`, `SENSORES`, `ATRIBUTOS`, `BOOL_SENSOR`, `BOOL_DISP`, `LIT_COLORES`,
@@ -102,6 +117,61 @@ El `.exe` (`bin/main.exe`) **se versiona en git** (se entrega junto al código).
   `errores_lexicos` (con línea, posición y mensaje) y continúa con `skip(1)` — el análisis
   **no se detiene** ante un error. La lista se limpia (`.clear()`) al inicio de cada análisis.
 
+### Parser y traducción (una sola pasada)
+- **Traducción dirigida por sintaxis:** no hay AST ni segunda recorrida. Las acciones
+  semánticas de cada `p_*` registran sensores/atributos en los acumuladores
+  `_sensores`/`_dispositivos` en el momento de cada reducción; al reducir `PROGRAMA`
+  se serializa con `renderizar(...)` (función en el mismo `parser.py`, sección
+  "GENERACION DE HTML") y **`parser.parse()` devuelve el HTML**.
+- **Una sola tokenización:** `analizar_programa(lista_tokens, titulo)` recibe la lista
+  de tokens ya emitida (adaptador `_LexerDeLista`); la misma lista alimenta la tabla
+  de tokens en pantalla y el parseo.
+- **Precedencias** `(('left','OR'), ('left','AND'), ('right','NOT'))` resuelven la
+  ambigüedad de `EXPRESION_LOGICA`. La gramática no tiene conflictos (verificado).
+- **Errores sintácticos:** lista global `errores_sintacticos` (línea, cadena, mensaje).
+  Recuperación en modo pánico con `INSTRUCCION : error END` + `p.parser.errok()` al
+  reducirla (sin el `errok()`, yacc suprime errores consecutivos por la regla
+  anti-cascada de 3 tokens). Se reportan varios errores por archivo.
+- **El HTML se genera SIEMPRE "hasta donde se pudo"**, aunque haya errores. Las
+  asignaciones inválidas (semánticas) no se registran; lo válido sí se traduce. Si
+  `parse()` no llega a reducir `PROGRAMA` (error no recuperable), `analizar_programa`
+  igual serializa los acumuladores parciales. `main.py`/GUI escriben/muestran ese HTML
+  y avisan si es parcial. (Antes el HTML se suprimía ante cualquier error; cambió por
+  pedido de la cátedra.)
+- `yacc.yacc(debug=False, write_tables=False, errorlog=NullLogger)`: no genera
+  `parser.out`/`parsetab.py`; el NullLogger silencia los avisos esperados por
+  `GUION`/`TOKEN_ID_ESP` sin usar. Si tocás la gramática, **rehacé la verificación
+  de conflictos** construyendo una vez sin `errorlog`.
+
+### Validación semántica (en `parser.py`)
+- La gramática **no puede** distinguir `foco_` de `aire_`: ambos son el mismo terminal
+  `ID_DISPOSITIVO` (el prefijo viaja en el *valor* del token, no en su *tipo*). Por eso
+  las restricciones de la tabla de la consigna (pág. 6) se controlan en las **acciones
+  semánticas**, no con reglas.
+- **`ESPEC_ACTUADORES`**: tabla `prefijo → atributo → clases de valor admitidas`
+  (transcripción 1:1 de la pág. 6, incluye los de solo lectura para validar lecturas).
+  **`_RANGOS`**: rangos que el lexer no controla (hoy solo `temp_obj` 16–30 °C; los `%`
+  ya los limita `TOKEN_PORC` a 0–100).
+- Tres chequeos: **atributo↔dispositivo** (en asignación y lectura, `_atributo_pertenece`),
+  **valor↔atributo** y **rango** (solo en asignación, `_validar_asignacion`). Cada `VALOR`
+  lleva su **clase** (`BOOL_DISP`, `COLOR`, `TEMP`…) deducida del tipo de token (`p.slice`);
+  el conjunto está en `CLASES_VALOR`.
+- Los errores semánticos se **mezclan en `errores_sintacticos`** (no hay lista aparte) con
+  prefijo de mensaje `[ERROR]`, línea y cadena. Una asignación inválida no aparece en el HTML.
+- Pendiente como ampliación: chequeo de tipos en **comparaciones** (p. ej. `foco_x.estado
+  == azul`), hoy solo se valida valor↔atributo en asignaciones.
+
+### GUI (dentro de `main.py`)
+- Toda la GUI tkinter (clases `TextoConEventos`, `NumerosDeLinea`, `VentanaPrincipal`)
+  se define **dentro de `ejecutar_gui()`**, junto con el `import tkinter` local. Es a
+  propósito: así los modos CLI/consola no pagan el import de tkinter ni fallan si no está
+  instalado (las clases heredan de `tk.*`, por eso deben definirse después del import).
+- `TextoConEventos` usa el patrón **widget proxy** (renombra el comando Tcl interno del
+  `tk.Text`) para emitir `<<CambioEditor>>` en cada cambio/scroll: de ahí se redibujan
+  los números de línea. No tocar ese mecanismo sin probar tipeo+pegado+scroll+resize.
+- La GUI no duplica lógica de análisis: usa `analizar_completo` y las listas de errores
+  de lexer/parser (todo en el mismo `main.py`).
+
 ## Convenciones
 
 - Código y mensajes en **español** (incluido el `print` de tokens y errores).
@@ -111,41 +181,52 @@ El `.exe` (`bin/main.exe`) **se versiona en git** (se entrega junto al código).
   carácter ilegal a propósito (la cátedra las mete para verificar el reporte de errores —
   ver `prueba/00_ej_consigna.smart`).
 - Los archivos de entrada deben terminar en `.smart`.
+- **No usar la librería estándar `html`** (restricción de la cátedra). El traductor
+  interpola el texto crudo en los f-strings; no se hace escape de `<`/`&`/`"`.
 
-## Conformidad con la consigna (entrega del lexer)
+## Conformidad con la consigna
 
-Cumple lo exigido para la 2da entrega: reconoce todos los tokens de `doc/consigna.pdf`
-(palabras reservadas, sensores, atributos, literales con unidad, operadores, email,
-comentarios) y ofrece los dos modos de ejecución (interactivo y archivo `.smart`).
-El control de errores reporta carácter, línea y posición.
+- **2da entrega (lexer):** cumplida — todos los tokens + dos modos de ejecución +
+  control de errores con carácter, línea y posición.
+- **3ra entrega (final):** parser LALR según `doc/gramatica.md`, **validación semántica**
+  (tabla de la consigna pág. 6), traducción a HTML **mientras se parsea** (consigna §5:
+  div verde de sensores con `<h2>`, un div gris por actuador con `<h1>` + `<ul>/<li>`,
+  emails como `<a href="mailto:...">Contactar a usuario</a>`, salida `<fuente>.html`),
+  control de errores léxicos/sintácticos/semánticos con tipo/línea/cadena, generación de
+  HTML parcial aun con errores, y modos de ejecución archivo + interactivo + GUI.
+  Falta solo la **documentación de entrega** (informe técnico, video).
 
-## Consistencia lexer ↔ gramática (RESUELTO — ver `doc/gramatica.md`)
+## Historia: desalineación lexer ↔ gramática (resuelta DOS veces)
 
-Se eligió el modelo de **token único `ID_DISPOSITIVO`** y se alinearon ambos lados:
-- **Lexer:** `foco_entrada.estado` → `[ID_DISPOSITIVO 'foco_entrada', PUNTO, ATTR_ESTADO]`.
-- **Gramática (`doc/gramatica.md`):** `IDENTIFICADOR_COMPUESTO → ID_DISPOSITIVO PUNTO ID_ASIGNABLE`.
-  Se eliminó `ESPECIFICACION` y el terminal `_`; los prefijos `foco|aire|…` ya no son terminales.
+El modelo de **token único `ID_DISPOSITIVO`** se implementó originalmente, pero una
+reescritura posterior del lexer ("el maestro del lexer lo hizo de nuevo") lo pisó y
+volvió a los tokens `PREF_*` (con los que `foco_entrada` caía a `TOKEN_ID_ESP`).
+Se re-corrigió el 10/06/2026 al empezar el parser (ver `doc/cambios_parser_gui.md` §1).
+**Moraleja:** si se reescribe el lexer, verificar con `foco_entrada.estado` que salga
+`[ID_DISPOSITIVO, PUNTO, ATTR_ESTADO]`.
 
-También se corrigió en `doc/gramatica.md` el **bug de atributos de solo lectura**: `temp_act`,
-`hora`, `fecha` ahora se pueden **leer** en condiciones vía `ACCESO_DISPOSITIVO → ID_DISPOSITIVO
-PUNTO ID_LEGIBLE`, pero **no** asignar (`IDENTIFICADOR_COMPUESTO` solo admite `ID_ASIGNABLE`).
+## Desfasajes en los ejemplos de la consigna (informativo)
 
-## Desfasajes pendientes en los ejemplos de la consigna (informativo)
+Los ejemplos de `doc/consigna.pdf` usan formas que el lenguaje **no** acepta:
+`reloj.hora`/`alarma.estado` (sin prefijo de dispositivo), `color = blue` (válidos:
+`blanco/rojo/azul`), `temp_objetivo` (es `temp_obj`), `sensor_temp_int` (inexistente),
+`.email` (es `email_notif`). Caen a `TOKEN_ID_ESP` y ahora el **parser los reporta
+como errores sintácticos** con línea y lexema (ver `prueba/00_ej_consigna.smart`).
 
-Los ejemplos de `doc/consigna.pdf` usan formas que el lenguaje **no** acepta (caen a
-`TOKEN_ID_ESP`, no son error léxico): `reloj.hora`/`alarma.estado` (sin prefijo de
-dispositivo), `color = blue` (en inglés; válidos: `blanco/rojo/azul`), `temp_objetivo`
-(es `temp_obj`), `sensor_temp_int` (sensor inexistente). No es un problema del lexer;
-conviene corregir los ejemplos propios o, si se quiere, ampliar el lenguaje.
+## Pendientes
 
-## Pendientes y mejoras de calidad
+- **Informe técnico y video** para la entrega final del 05/07 (la consigna §7).
+  `doc/cambios_parser_gui.md` es insumo directo (pero está **desactualizado**: no incluye
+  la fusión de archivos, la quita de la librería `html`, el HTML parcial ni la validación
+  semántica; conviene regenerarlo o complementarlo antes del informe).
+- Ampliación: validación de tipos en **comparaciones** (hoy valor↔atributo solo en
+  asignaciones) y rangos de **sensores** (`sensor_temp` −10..50, etc.).
+- La consigna menciona `.json` para los ejemplos pero el resto usa `.smart` —
+  aclarar con la cátedra cuál extensión esperan.
 
-- **Falta el parser** (`parser.py` con `ply.yacc`) y el **traductor a HTML** (sección 5 de
-  la consigna): ambos para la entrega final del 05/07.
-- `prueba/` ya tiene 5 ejemplos `.smart` (4 válidos + 1 con errores léxicos). La consigna
-  menciona `.json` para los ejemplos pero el resto usa `.smart` — aclarar con la cátedra
-  cuál extensión esperan.
-
-Ya resuelto: token único `ID_DISPOSITIVO` (lexer+gramática), atributos de solo lectura en
-condiciones (gramática), regex redundante `_?` de `t_TOKEN_ID_ESP`, ejemplos en `prueba/`,
-eliminación de `resguardo` y del bloque `__main__` duplicado de `lexer.py`.
+Ya resuelto: parser + traductor HTML en una pasada + GUI (10/06/2026), token único
+`ID_DISPOSITIVO` (lexer+gramática, dos veces), atributos de solo lectura en
+condiciones (gramática y parser), **validación semántica** (atributo↔dispositivo,
+valor↔atributo, rango `temp_obj`), **HTML parcial aun con errores**, **fusión a 3
+archivos** (parser+htmlgen, main+gui) **sin la librería `html`**, ejemplos en `prueba/`
+(8, con léxicos/sintácticos/semánticos), recuperación de errores sintácticos múltiples.

@@ -62,7 +62,10 @@ ACCESO_DISPOSITIVO      → ID_DISPOSITIVO PUNTO ID_LEGIBLE        (acceso de LE
 `ID_DISPOSITIVO` es un terminal: cualquier identificador que empiece con un prefijo de
 actuador (`foco_`, `aire_`, `persiana_`, `cerradura_`, `reloj_`, `altavoz_`, `alarma_`).
 La validación de que el atributo corresponda al tipo de dispositivo (p. ej. que `foco_x`
-no use `.modo`) es **semántica**, no sintáctica.
+no use `.modo`) es **semántica**, no sintáctica: no se puede expresar en la gramática
+porque todos los actuadores son el mismo terminal `ID_DISPOSITIVO` (el prefijo está en el
+*valor* del token, no en su *tipo*). Se controla en las acciones semánticas del parser
+(ver §1.bis).
 
 ```
 ID_ASIGNABLE → ATTR_ESTADO | ATTR_BRILLO | ATTR_COLOR | ATTR_MODO
@@ -111,6 +114,49 @@ VALOR_BOOL     → BOOLEANO_SENSOR    (TRUE / FALSE)
 ```
 
 `LIT_COLOR` (blanco/rojo/azul) y `LIT_MODO` (frio/calor/vent) ya son tokens del lexer.
+
+---
+
+## 1.bis Restricciones semánticas (no expresables en la gramática)
+
+La gramática acepta cualquier `ID_DISPOSITIVO . ID_ASIGNABLE = VALOR`. Las restricciones
+de la consigna (§4, tabla de la pág. 6) **no** se pueden expresar como producciones —todos
+los actuadores comparten el terminal `ID_DISPOSITIVO`— y se validan en las **acciones
+semánticas** del parser (`src/parser.py`, tabla `ESPEC_ACTUADORES`). Los incumplimientos se
+reportan como error (con línea y cadena) y la asignación inválida no se traduce a HTML.
+
+Reglas semánticas implementadas:
+
+1. **Atributo ↔ dispositivo** (en escritura y en lectura): el atributo debe pertenecer al
+   tipo de actuador.
+2. **Valor ↔ atributo** (en escritura): la clase del valor debe coincidir con el tipo del
+   atributo.
+3. **Rango** (en escritura): `temp_obj` ∈ [16 °C, 30 °C]. Los `%` (brillo/posicion/volumen)
+   ya los limita el lexer a 0–100 vía `TOKEN_PORC`.
+
+| Dispositivo | Atributo | Valor admitido | Permiso |
+|-------------|----------|----------------|---------|
+| `foco_`      | `estado` | on/off | L/E |
+| `foco_`      | `brillo` | 0–100 % | L/E |
+| `foco_`      | `color`  | blanco/rojo/azul | L/E |
+| `aire_`      | `estado` | on/off | L/E |
+| `aire_`      | `modo`   | frio/calor/vent | L/E |
+| `aire_`      | `temp_obj` | 16 °C–30 °C | L/E |
+| `aire_`      | `temp_act` | −10 °C–50 °C | Solo lectura |
+| `persiana_`  | `posicion` | 0–100 % | L/E |
+| `cerradura_` | `estado` | on/off | L/E |
+| `reloj_`     | `hora`   | HH:MM | Solo lectura |
+| `reloj_`     | `fecha`  | DD/MM/AAAA | Solo lectura |
+| `altavoz_`   | `volumen` | 0–100 % | L/E |
+| `altavoz_`   | `mute`   | on/off | L/E |
+| `altavoz_`   | `mensaje` | texto entre comillas | L/E |
+| `altavoz_`   | `email_notif` | email | L/E |
+| `alarma_`    | `estado` | on/off | L/E |
+| `alarma_`    | `activada` | on/off | L/E |
+
+> Los atributos de solo lectura (`temp_act`, `hora`, `fecha`) ya están impedidos como
+> destino de asignación a nivel **gramatical** (no están en `ID_ASIGNABLE`); igual figuran
+> en la tabla para validar los accesos de lectura en condiciones.
 
 ---
 

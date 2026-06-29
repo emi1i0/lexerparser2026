@@ -1,0 +1,42 @@
+// Ejemplo con errores SEMANTICOS: cada instruccion es lexica y
+// sintacticamente correcta (dispositivo.atributo = valor), pero viola la
+// tabla de la consigna (pag. 6). El parser debe reportar cada caso con su
+// linea, sin frenar el analisis, y NO incluir las asignaciones invalidas
+// en el HTML.
+
+// 1) atributo que NO corresponde al dispositivo
+//    (modo es de aire_, no de foco_)
+WHEN sensor_movimiento == true DO
+  foco_entrada.modo = frio
+END
+
+// 2) atributo inexistente para el dispositivo en una LECTURA
+//    (brillo no es atributo de reloj_)
+WHEN reloj_sala.brillo > 50% DO
+  alarma_casa.estado = ON
+END
+
+// 3) valor incompatible con el atributo
+//    (estado es ON/OFF, no un color)
+EVERY 30m DO
+  foco_patio.estado = azul
+END
+
+// 4) otro valor incompatible
+//    (modo del aire debe ser FRIO/CALOR/VENT, no un porcentaje)
+WHEN sensor_temp > 26°C DO
+  aire_living.modo = 80%
+END
+
+// 5) valor fuera de rango
+//    (temp_obj admite 16°C a 30°C)
+WHEN sensor_temp > 28°C DO
+  aire_living.temp_obj = 45°C
+END
+
+// 6) instrucciones VALIDAS al final: deben aceptarse y aparecer en el HTML
+//    (demuestra que los errores semanticos no cortan el analisis)
+IF sensor_humo == true THEN
+  alarma_casa.activada = ON
+  aire_living.temp_obj = 22°C
+END
